@@ -606,13 +606,17 @@ abstract class CI_DB_forge {
 	 */
 	public function drop_column($table, $column_name)
 	{
-		$sql = $this->_alter_table('DROP', $this->db->dbprefix.$table, $column_name);
-		if ($sql === FALSE)
-		{
-			return ($this->db->db_debug) ? $this->db->display_error('db_unsupported_feature') : FALSE;
-		}
+		if ($this->_check_if_field_exists($table, $column_name)) {
+			$sql = $this->_alter_table('DROP', $this->db->dbprefix.$table, $column_name);
+			if ($sql === FALSE)
+			{
+				return ($this->db->db_debug) ? $this->db->display_error('db_unsupported_feature') : FALSE;
+			}
 
-		return $this->db->query($sql);
+			return $this->db->query($sql);
+		}
+		// Always returns true if the process executes without a failure
+		return TRUE;
 	}
 
 	// --------------------------------------------------------------------
@@ -1039,6 +1043,33 @@ abstract class CI_DB_forge {
 	protected function _reset()
 	{
 		$this->fields = $this->keys = $this->primary_keys = array();
+	}
+
+	// --------------------------------------------------------------------
+	
+	/**
+	* Returns true if the field with the supplied Field Name in the supplied Table Name exists
+	* 
+	* @param       string  $table  Table Name
+	* @param       string  $field  Field Name
+	* @return      boolean
+	*/
+	protected function _check_if_field_exists($table = '', $field = '')
+	{
+		if (empty($table) OR empty($field)) 
+		{
+			// Defaults to return value of TRUE if the table-field is not specified
+			return TRUE;
+		} 
+		else
+		{
+			$arrData = $this->db->query("SHOW COLUMNS FROM `{$table}` LIKE '{$field}'");
+			if (count($arrData)) 
+			{
+				return TRUE;
+			}
+			return FALSE;            
+		}
 	}
 
 }
